@@ -28,7 +28,8 @@ get '/:short_url' do
   p request
   p request.ip
   p env['REMOTE_ADDR']
-  link.visits << Visit.create(:ip => request.ip)
+  p env['HTTP_X_REAL_IP']
+  link.visits << Visit.create(:ip => env['HTTP_X_REAL_IP'])
   link.save
   redirect link.url.original
 end
@@ -184,10 +185,10 @@ __END__
 .span-3 Number of visits
 .span-21.last #{@link.visits.size.to_s} visits
     
-%h2 Number of visits in the past #{@num_of_days} days
+%h2= "Number of visits in the past #{@num_of_days} days"
 - %w(7 14 21 30).each do |num_days|
   %a{:href => "/info/#{@link.identifier}/#{num_days}"}
-    =num_days
+    ="#{num_days} days "
   |
 %p
 .span-24.last
