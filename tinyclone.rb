@@ -151,8 +151,8 @@ __END__
 - unless @link.nil?
   %code= @link.url.original
   has been shortened to 
-  %a{:href => env['HTTP_REFERER'] + @link.identifier}
-    = env['HTTP_REFERER'] + @link.identifier
+  %a{:href => "/#{@link.identifier}"}
+    = "http://tinyclone.saush.com/#{@link.identifier}"
 - if env['sinatra.error']
   .error= env['sinatra.error'] 
 %form{:method => 'post', :action => '/'}
