@@ -159,6 +159,11 @@ __END__
   has been shortened to 
   %a{:href => "/#{@link.identifier}"}
     = "http://tinyclone.saush.com/#{@link.identifier}"
+  %br
+  Go to 
+  %a{:href => "/info/#{@link.identifier}"}
+    = "http://tinyclone.saush.com/info/#{@link.identifier}"
+  to get more information about this link.
 - if env['sinatra.error']
   .error= env['sinatra.error'] 
 %form{:method => 'post', :action => '/'}
