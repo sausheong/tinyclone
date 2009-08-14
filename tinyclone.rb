@@ -16,18 +16,17 @@ end
     @link = Link.first(:identifier => params[:short_url])
     raise 'This link is not defined yet' unless @link
     @num_of_days = (params[:num_of_days] || 15).to_i
-    map = params[:map] || 'world'
-    @count_chart = Visit.count_chart(params[:short_url], @num_of_days)
-    @count_map = Visit.count_map(params[:short_url], map)
+    @count_days_bar = Visit.count_days_bar(params[:short_url], @num_of_days)
+    chart = Visit.count_country_chart(params[:short_url], params[:map] || 'world')
+    @count_country_map = chart[:map]
+    @count_country_bar = chart[:bar]
     haml :info
   end
 end
 
 get '/:short_url' do 
   link = Link.first(:identifier => params[:short_url])
-  ip = get_remote_ip(env)
-  p ip
-  link.visits << Visit.create(:ip => ip)
+  link.visits << Visit.create(:ip => get_remote_ip(env))
   link.save
   redirect link.url.original
 end
@@ -109,18 +108,20 @@ class Visit
     self.save
   end
   
-  def self.count_chart(identifier,num_of_days)
+  def self.count_days_bar(identifier,num_of_days)
     visits = count_by_date_with(identifier,num_of_days)
     data, labels = [], []
     visits.each {|visit| data << visit[1]; labels << "#{visit[0].day}/#{visit[0].month}" }
     "http://chart.apis.google.com/chart?chs=600x180&cht=bvs&chxt=x&chco=a4b3f4&chm=N,000000,0,-1,11&chxl=0:|#{labels.join('|')}&chds=0,#{data.sort.last+10}&chd=t:#{data.join(',')}"
   end
   
-  def self.count_map(identifier,map)
-    visits = count_by_country_with(identifier)
+  def self.count_country_chart(identifier,map)
     countries, count = [], []
-    visits.each {|visit| countries << visit.country; count << visit.count }
-    "http://chart.apis.google.com/chart?chs=440x220&cht=t&chtm=#{map}&chco=FFFFFF,a4b3f4,0523a4&chld=#{countries.join('')}&chd=t:#{count.join(',')}"
+    count_by_country_with(identifier).each {|visit| countries << visit.country; count << visit.count }
+    chart = {}
+    chart[:map] = "http://chart.apis.google.com/chart?chs=440x220&cht=t&chtm=#{map}&chco=FFFFFF,a4b3f4,0000FF&chld=#{countries.join('')}&chd=t:#{count.join(',')}"
+    chart[:bar] = "http://chart.apis.google.com/chart?chs=480x240&cht=bhs&chco=a4b3f4&chm=N,000000,0,-1,11&chbh=a&chd=t:#{count.join(',')}&chxt=x,y&chxl=1:|#{countries.reverse.join('|')}"
+    return chart
   end
   
   def self.count_by_date_with(identifier,num_of_days)
@@ -187,7 +188,7 @@ __END__
 .span-3 Date created
 .span-21.last= @link.created_at
 .span-3 Number of visits
-.span-21.last #{@link.visits.size.to_s} visits
+.span-21.last= "#{@link.visits.size.to_s} visits"
     
 %h2= "Number of visits in the past #{@num_of_days} days"
 - %w(7 14 21 30).each do |num_days|
@@ -196,13 +197,16 @@ __END__
   |
 %p
 .span-24.last
-  %img{:src => @count_chart}
+  %img{:src => @count_days_bar}
 
-%h2 Number of visits in total by country
+%h2 Number of visits by country
 - %w(world usa asia europe africa middle_east south_america).each do |loc|
   %a{:href => "/info/#{@link.identifier}/#{@num_of_days.to_s}/#{loc}"}
     =loc
   |
 %p
-.span-24.last
-  %img{:src => @count_map}    
+.span-12
+  %img{:src => @count_country_map}
+.span-12.last
+  %img{:src => @count_country_bar}
+%p
