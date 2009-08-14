@@ -35,12 +35,9 @@ end
 error do haml :index end
 
 def get_remote_ip(env)
-  if env['REMOTE_ADDR'].is_a? Array
-    return  env['REMOTE_ADDR'].first.strip if env['REMOTE_ADDR'].last.strip == '127.0.0.1'
-    return  env['REMOTE_ADDR'].last.strip
-  else
-    return env['REMOTE_ADDR']
-  end    
+  ip_array = env['REMOTE_ADDR'].split(',')
+  return ip_array.first.strip if ip_array.last.strip == '127.0.0.1'
+  return ip_array.last.strip
 end
 
 use_in_file_templates!
