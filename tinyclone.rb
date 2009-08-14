@@ -25,6 +25,8 @@ end
 
 get '/:short_url' do 
   link = Link.first(:identifier => params[:short_url])
+  p request
+  p env['REMOTE_ADDR']
   link.visits << Visit.create(:ip => env['REMOTE_ADDR'])
   link.save
   redirect link.url.original
