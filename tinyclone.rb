@@ -185,9 +185,9 @@ __END__
 .span-21.last #{@link.visits.size.to_s} visits
     
 %h2 Number of visits in the past #{@num_of_days} days
-- %w(7 14 21 30).each do |days|
-  %a{:href => "/info/#{@link.identifier}/#{days}"}
-    #{days} days 
+- %w(7 14 21 30).each do |num_days|
+  %a{:href => "/info/#{@link.identifier}/#{num_days}"}
+    #{num_days} 
   |
 %p
 .span-24.last
