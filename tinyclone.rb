@@ -25,17 +25,22 @@ end
 
 get '/:short_url' do 
   link = Link.first(:identifier => params[:short_url])
-  p request
-  p request.ip
-  p env['REMOTE_ADDR']
-  p env['HTTP_X_REAL_IP']
-  link.visits << Visit.create(:ip => env['HTTP_X_REAL_IP'])
+  link.visits << Visit.create(:ip => get_remote_ip(env))
   link.save
   redirect link.url.original
 end
 
 error do haml :index end
 
+def get_remote_ip(env)
+  if env['REMOTE_ADDR'].is_a? Array
+    return  env['REMOTE_ADDR'].first.strip if env['REMOTE_ADDR'].last.strip == '127.0.0.1'
+    return  env['REMOTE_ADDR'].last.strip
+  else
+    return env['REMOTE_ADDR']
+  end
+    
+end
 use_in_file_templates!
 
 DataMapper.setup(:default, ENV['DATABASE_URL'] || 'mysql://root:root@localhost/tinyclone')
