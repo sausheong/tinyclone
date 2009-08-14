@@ -25,7 +25,9 @@ end
 
 get '/:short_url' do 
   link = Link.first(:identifier => params[:short_url])
-  link.visits << Visit.create(:ip => get_remote_ip(env))
+  ip = get_remote_ip(env)
+  p ip
+  link.visits << Visit.create(:ip => ip)
   link.save
   redirect link.url.original
 end
@@ -38,9 +40,9 @@ def get_remote_ip(env)
     return  env['REMOTE_ADDR'].last.strip
   else
     return env['REMOTE_ADDR']
-  end
-    
+  end    
 end
+
 use_in_file_templates!
 
 DataMapper.setup(:default, ENV['DATABASE_URL'] || 'mysql://root:root@localhost/tinyclone')
