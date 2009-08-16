@@ -28,15 +28,17 @@ get '/:short_url' do
   link = Link.first(:identifier => params[:short_url])
   link.visits << Visit.create(:ip => get_remote_ip(env))
   link.save
-  redirect link.url.original
+  redirect link.url.original, 301
 end
 
 error do haml :index end
 
 def get_remote_ip(env)
-  ip_array = env['REMOTE_ADDR'].split(',')
-  return ip_array.first.strip if ip_array.last.strip == '127.0.0.1'
-  return ip_array.last.strip
+  if addr = env['HTTP_X_FORWARDED_FOR']
+    addr.split(',').first.strip
+  else
+    env['REMOTE_ADDR']
+  end
 end
 
 use_in_file_templates!
@@ -51,7 +53,7 @@ end
 
 class Link
   include DataMapper::Resource
-  property  :identifier,         String, :key => true
+  property  :identifier,  String, :key => true
   property  :created_at,  DateTime 
   has 1, :url
   has n, :visits
@@ -112,7 +114,7 @@ class Visit
     visits = count_by_date_with(identifier,num_of_days)
     data, labels = [], []
     visits.each {|visit| data << visit[1]; labels << "#{visit[0].day}/#{visit[0].month}" }
-    "http://chart.apis.google.com/chart?chs=600x180&cht=bvs&chxt=x&chco=a4b3f4&chm=N,000000,0,-1,11&chxl=0:|#{labels.join('|')}&chds=0,#{data.sort.last+10}&chd=t:#{data.join(',')}"
+    "http://chart.apis.google.com/chart?chs=820x180&cht=bvs&chxt=x&chco=a4b3f4&chm=N,000000,0,-1,11&chxl=0:|#{labels.join('|')}&chds=0,#{data.sort.last+10}&chd=t:#{data.join(',')}"
   end
   
   def self.count_country_chart(identifier,map)
@@ -120,7 +122,7 @@ class Visit
     count_by_country_with(identifier).each {|visit| countries << visit.country; count << visit.count }
     chart = {}
     chart[:map] = "http://chart.apis.google.com/chart?chs=440x220&cht=t&chtm=#{map}&chco=FFFFFF,a4b3f4,0000FF&chld=#{countries.join('')}&chd=t:#{count.join(',')}"
-    chart[:bar] = "http://chart.apis.google.com/chart?chs=480x240&cht=bhs&chco=a4b3f4&chm=N,000000,0,-1,11&chbh=a&chd=t:#{count.join(',')}&chxt=x,y&chxl=1:|#{countries.reverse.join('|')}"
+    chart[:bar] = "http://chart.apis.google.com/chart?chs=320x240&cht=bhs&chco=a4b3f4&chm=N,000000,0,-1,11&chbh=a&chd=t:#{count.join(',')}&chxt=x,y&chxl=1:|#{countries.reverse.join('|')}"
     return chart
   end
   
@@ -150,20 +152,22 @@ __END__
     %link{:rel => 'stylesheet', :href => 'http://www.blueprintcss.org/blueprint/screen.css', :type => 'text/css'}  
   %body
     .container
+      %p
       = yield
 
 @@ index
 %h1.title TinyClone
 - unless @link.nil?
-  %code= @link.url.original
-  has been shortened to 
-  %a{:href => "/#{@link.identifier}"}
-    = "http://tinyclone.saush.com/#{@link.identifier}"
-  %br
-  Go to 
-  %a{:href => "/info/#{@link.identifier}"}
-    = "http://tinyclone.saush.com/info/#{@link.identifier}"
-  to get more information about this link.
+  .success
+    %code= @link.url.original
+    has been shortened to 
+    %a{:href => "/#{@link.identifier}"}
+      = "http://tinyclone.saush.com/#{@link.identifier}"
+    %br
+    Go to 
+    %a{:href => "/info/#{@link.identifier}"}
+      = "http://tinyclone.saush.com/info/#{@link.identifier}"
+    to get more information about this link.
 - if env['sinatra.error']
   .error= env['sinatra.error'] 
 %form{:method => 'post', :action => '/'}
